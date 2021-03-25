@@ -101,7 +101,7 @@ def dump_json(strs, ids, outpath):
             'token_ids': id
         }
         output.append(sample)
-    json.dump(output, open(outpath, 'w'), ensure_ascii=True)
+    json.dump(output, open(outpath, 'w', encoding='utf-8'), ensure_ascii=False)
 
 def tokenize_data(raw_datasets, en_tokenizer, vi_tokenizer, outpath: str):
     train_src_str = raw_datasets['train'][0]
