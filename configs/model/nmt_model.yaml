@@ -1,0 +1,18 @@
+_target_: src.models.nmt_model.NMTLitModel
+
+vocab_size: 10000
+src_pad_id: 1
+tgt_pad_id: 1
+tgt_vocab_size: 10000
+src_vocab_size: 10000
+seq_len: 128
+d_model: 512                # d_model = d_k * n_head
+d_k: 64
+d_v: 64
+n_head: int(512 / 64)
+d_ff: 2048                # Number of unit in feed-forward layer
+num_encoder_layers: 4       # Number of TransformerEncoderBlock layer in Encoder
+num_decoder_layers: 4       # Number of TransformerDecoderBlock layer in Decoder
+attn_dropout: 0.1           # Dropout for residual add after multi-head attention
+ff_dropout: 0.1             # Dropout for feed-forward residual add
+embed_dropout: 0.1          # Dropout for embedding after augmented wih positional encoding

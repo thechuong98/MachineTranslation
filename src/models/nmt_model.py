@@ -7,15 +7,16 @@ from src.architectures.transformer import Transfomer
 from pytorch_lightning.metrics.classification import Accuracy, F1
 
 
-class NMT_LitModel(pl.LightningModule):
-    def __init__(self, hparams, src_tokenizer, tgt_tokenizer):
-        super(NMT_LitModel, self).__init__()
-        self.hparams = hparams
-        self.src_tokenizer = src_tokenizer
-        self.tgt_tokenizer = tgt_tokenizer
-        self.hparams['src_pad_id'] = src_tokenizer.get_vocab()['[PAD]']
-        self.hparams['tgt_pad_id'] = tgt_tokenizer.get_vocab()['[PAD]']
-        self.model = Transfomer(hparams)
+class NMTLitModel(pl.LightningModule):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self.save_hyperparameters()
+        # self.src_tokenizer = src_tokenizer
+        # self.tgt_tokenizer = tgt_tokenizer
+        # self.hparams['src_pad_id'] = src_tokenizer.get_vocab()['[PAD]']
+        # self.hparams['tgt_pad_id'] = tgt_tokenizer.get_vocab()['[PAD]']
+        self.model = Transfomer(hparams=self.hparams)
 
     def forward(self, src_ids, tgt_ids):
         tgt_inp_ids = tgt_ids[:, :-1]

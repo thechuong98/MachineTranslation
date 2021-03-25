@@ -148,6 +148,8 @@ class FeedForwardAddNorm(nn.Module):
         return self.layer_norm(x)
 
 
+
+
 class AttentionAddNorm(nn.Module):
     def __init__(self, hparams: dict):
         self.hparams = hparams
@@ -171,6 +173,7 @@ class AttentionAddNorm(nn.Module):
         norm = self.layer_norm(add_layer)
 
         return norm
+
 
 def multihead_attention(Q, K, V, mask):
     """
