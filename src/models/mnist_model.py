@@ -127,3 +127,12 @@ class LitModelMNIST(pl.LightningModule):
             self.hparams.optimizer, params=self.parameters()
         )
         return optim
+
+
+class LitModelTransformer(pl.LightningModule):
+    def __init__(self, *args, **kwargs):
+        super.__init__()
+        self.save_hyperparameters()
+
+
+

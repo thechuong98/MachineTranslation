@@ -78,3 +78,4 @@ class MNISTDataModule(LightningDataModule):
             pin_memory=self.pin_memory,
             shuffle=False,
         )
+

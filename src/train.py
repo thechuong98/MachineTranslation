@@ -16,7 +16,8 @@ from src.utils import template_utils
 
 
 def train(config: DictConfig) -> Optional[float]:
-    """Contains training pipeline.
+    """
+    Contains training pipeline.
     Instantiates all PyTorch Lightning objects from config.
 
     Args:
