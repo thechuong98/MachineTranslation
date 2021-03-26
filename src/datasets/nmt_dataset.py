@@ -17,5 +17,5 @@ class NMTDataset(Dataset):
         return int(len(self.src))
 
     def __getitem__(self, idx):
-            return torch.LongTensor(self.src[idx]['token_ids']), torch.LongTensor(self.tgt[idx]['token_ids'])
+            return [torch.LongTensor(self.src[idx]['token_ids']), torch.LongTensor(self.tgt[idx]['token_ids'])]
 
