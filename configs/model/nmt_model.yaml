@@ -1,5 +1,6 @@
 _target_: src.models.nmt_model.NMTLitModel
 
+batch_size: 64
 vocab_size: 10000
 src_pad_id: 1
 tgt_pad_id: 1
@@ -9,7 +10,7 @@ seq_len: 128
 d_model: 512                # d_model = d_k * n_head
 d_k: 64
 d_v: 64
-n_head: int(512 / 64)
+n_head: 8
 d_ff: 2048                # Number of unit in feed-forward layer
 num_encoder_layers: 4       # Number of TransformerEncoderBlock layer in Encoder
 num_decoder_layers: 4       # Number of TransformerDecoderBlock layer in Decoder

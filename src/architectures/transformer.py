@@ -3,6 +3,23 @@ import torch
 import torch.nn.functional as F
 import math
 
+def multihead_attention_(Q, K, V, mask):
+    """
+    Q: (B, N, n_head, d_k)
+    K: (B, N, n_head, d_k)
+    V: (B, M, n_head, d_v)
+    mask (B, N, M)
+    """
+    B, N, n_head, d_k = Q.shape
+    scale = d_k**0.5
+    similar_score = torch.einsum('bnhd,bmhd->hbnm', Q, K)*scale
+    similar_score = similar_score.masked_fill(mask, value=float('-inf'))
+    attention_w = F.softmax(similar_score, dim=-1)
+    attention = torch.einsum('hbnm,bmhd->bnhd', attention_w, V)
+
+    return attention, similar_score
+
+
 class Transfomer(nn.Module):
     def __init__(self, hparams: dict):
         super().__init__()
@@ -52,10 +69,14 @@ class Embedding(nn.Module):
     def __init__(self, hparams: dict):
         super(Embedding, self).__init__()
         self.word_embedding = nn.Embedding(hparams['vocab_size'], hparams['d_model'])
-        self.positional_encoding = torch.Tensor(
-            generate_positional_encoding(hparams['seq_len'], hparams['d_model']),
-            requires_grad=False).float().unqueeze(0)
-        self.register_buffer('positional_encoding', self.positional_encoding)
+        positional_encoding = (
+            torch.tensor(
+                generate_positional_encoding(hparams['seq_len'], hparams['d_model']), requires_grad=False
+            )
+                .float()
+                .unsqueeze(0)
+        )
+        self.register_buffer('positional_encoding', positional_encoding)
         self.dropout = nn.Dropout(hparams['embed_dropout'])
         self.scale = hparams['d_model']**0.5
 
@@ -166,30 +187,15 @@ class AttentionAddNorm(nn.Module):
         query = self.Q_proj(query).reshape(B, seq_len, self.hparams['d_k'], self.hparams['n_head'])
         key = self.K_proj(key).reshape(B, seq_len, self.hparams['d_k'], self.hparams['n_head'])
         value = self.V_proj(value).reshape(B, seq_len, self.hparams['d_v'], self.hparams['n_head'])
-        multihead_attention, similar_score = multihead_attention(query, key, value, mask)
+        multihead_attention, similar_score = multihead_attention_(query, key, value, mask)
         multihead_attention_dropout = self.dropout(multihead_attention)
         multihead_attention_dropout = multihead_attention_dropout.reshape(B, seq_len, -1)
         add_layer = multihead_attention_dropout + init_query
         norm = self.layer_norm(add_layer)
 
-        return norm
+        return norm, similar_score
 
 
-def multihead_attention(Q, K, V, mask):
-    """
-    Q: (B, N, n_head, d_k)
-    K: (B, N, n_head, d_k)
-    V: (B, M, n_head, d_v)
-    mask (B, N, M)
-    """
-    B, N, n_head, d_k = Q.shape
-    scale = d_k**0.5
-    similar_score = torch.einsum('bnhd,bmhd->hbnm', Q, K)*scale
-    similar_score = similar_score.masked_fill(mask, value=float('-inf'))
-    attention_w = F.softmax(similar_score, dim=-1)
-    attention = torch.einsum('hbnm,bmhd->bnhd', attention_w, V)
-
-    return attention, similar_score
 
 def generate_positional_encoding(seq_len, d_model):
     """

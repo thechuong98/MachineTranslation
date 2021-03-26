@@ -22,23 +22,26 @@ class NMTLitModel(pl.LightningModule):
         tgt_inp_ids = tgt_ids[:, :-1]
         tgt_out_ids = tgt_ids[:, 1:]
         logits, encoder_attentions = self.model(src_ids, tgt_inp_ids)
-        loss = F.cross_entropy(logits, tgt_out_ids)
-
-        return loss
+        return logits
 
     def training_step(self, batch, batch_idx):
         src_ids, tgt_ids = batch
-        loss = self.forward(src_ids, tgt_ids)
+        logits = self.forward(src_ids, tgt_ids)
+        loss = F.cross_entropy(logits.view(self.hparams['batch_size'], self.hparams['tgt_vocab_size'], -1), tgt_ids[:, 1:])
         self.log('train_loss', loss.detach().cpu().item())
         return loss
 
     def validation_step(self, batch, batch_idx):
         src_ids, tgt_ids = batch
-        loss = self.forward(src_ids, tgt_ids)
+        logits = self.forward(src_ids, tgt_ids)
+        loss = F.cross_entropy(logits.view(self.hparams['batch_size'], self.hparams['tgt_vocab_size'], -1),
+                               tgt_ids[:, 1:])
         self.log('val_loss', loss.detach().cpu().item())
         return loss
 
-
+    def test_step(self, batch, batch_idx):
+        src_ids, tgt_ids = batch
+        logits = self.model(src_ids, tgt_ids)
 
     def configure_optimizers(self):
         no_decay = ["bias", "LayerNorm.weight"]
