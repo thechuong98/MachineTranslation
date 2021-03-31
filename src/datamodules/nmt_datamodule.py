@@ -46,7 +46,7 @@ class NMTDataModule(LightningDataModule):
                           batch_size=self.batch_size,
                           num_workers=self.num_worker,
                           pin_memory=self.pin_memory,
-                          drop_last=True
+                          drop_last=True,
                           shuffle=True)
 
     def test_dataloader(self):
