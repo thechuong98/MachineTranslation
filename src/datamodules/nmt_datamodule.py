@@ -6,8 +6,7 @@ import sys
 sys.path.append('')
 
 
-ROOT_DIR = os.path.abspath(os.curdir)
-DATA_DIR = 'data/processed_iwslt_data/'
+
 
 class NMTDataModule(LightningDataModule):
     """

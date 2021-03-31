@@ -4,6 +4,8 @@ from datasets import load_metric
 import torch
 import hydra
 from src.architectures.transformer import Transfomer
+import os
+from tokenizers.implementations import ByteLevelBPETokenizer
 from pytorch_lightning.metrics.classification import Accuracy, F1
 
 
@@ -12,10 +14,12 @@ class NMTLitModel(pl.LightningModule):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.save_hyperparameters()
-        # self.src_tokenizer = src_tokenizer
-        # self.tgt_tokenizer = tgt_tokenizer
-        # self.hparams['src_pad_id'] = src_tokenizer.get_vocab()['[PAD]']
-        # self.hparams['tgt_pad_id'] = tgt_tokenizer.get_vocab()['[PAD]']
+        self.tokenizer_dir = os.path.join(self.hparams['work_dir'], 'script', 'tokenizer')
+        self.src_tokenizer = ByteLevelBPETokenizer(os.path.join(self.tokenizer_dir, 'en'))
+        self.tgt_tokenizer = ByteLevelBPETokenizer(os.path.join(self.tokenizer_dir, 'vi'))
+
+        # self.src_pad_id = self.src_tokenizer.get_vocab()['[PAD]']
+        # self.tgt_pad_id = self.tgt_tokenizer.get_vocab()['[PAD]']
         self.model = Transfomer(hparams=self.hparams)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.metric = load_metric('sacrebleu')
@@ -44,9 +48,6 @@ class NMTLitModel(pl.LightningModule):
         self.log('val_loss', loss.detach().cpu().item())
         return loss
 
-    def test_step(self, batch, batch_idx):
-        src_ids, tgt_ids = batch
-        logits = self.model(src_ids, tgt_ids)
 
     def configure_optimizers(self):
         optim = hydra.utils.instantiate(

@@ -1,8 +1,10 @@
 from PIL import Image
 
 from src.models.mnist_model import LitModelMNIST
+from src.models.nmt_model import NMTLitModel
 from src.transforms import mnist_transforms
-
+import torch
+import numpy as np
 
 def predict():
     """Example of inference with trained model.
@@ -37,6 +39,54 @@ def predict():
     output = trained_model(img)
     print(output)
 
+def translate(sentences):
+    CKPT_PATH = "last.ckpt"
+    litmodel = LitModelMNIST.load_from_checkpoint(checkpoint_path=CKPT_PATH)
+    # print model hyperparameters
+    print(litmodel.hparams)
+
+    # switch to evaluation mode
+    litmodel.eval()
+    litmodel.freeze()
+
+    src_ids = [i.ids for i in litmodel.src_tokenizer.encode_batch(sentences)]
+    src_ids = torch.LongTensor(src_ids).to(litmodel.device)
+    src_mask = litmodel.model.make_src_mask(src_ids)
+
+    encoder_output = litmodel.model.encode(src_ids, src_mask)
+    tgt_init_str = [""]*len(sentences)
+    tgt_ids = [i.ids[:-1] for i in litmodel.tgt_tokenizer.encode_batch(tgt_init_str)]
+    tgt_ids = np.array(tgt_ids)
+    tgt_eos_idx = litmodel.tgt_tokenizer.get_vocab()['EOS']
+    tgt_mask = litmodel.model.causal_mask.unsqueeze(0).to(litmodel.device)  # (1, seq_len, seq_len)
+    completed = np.array([False for _ in sentences])
+
+    for step_idx in range(litmodel.config.seq_len - 1):
+        tgt_ids_inp = torch.LongTensor(tgt_ids).to(litmodel.device)
+        logits, attentions = litmodel.model.decode(encoder_output, src_mask, tgt_ids_inp, tgt_mask)
+        # logits: B, seq_len, vocab_size
+        current_decode_step_logits = logits[:, step_idx]  # (B, V)
+        _, best_ids = current_decode_step_logits.topk(1, dim=-1)  # argmax on dim vocab
+        best_ids = best_ids.detach().cpu().numpy().flatten()  # (V,)
+        tgt_ids[:, step_idx + 1] = best_ids  # Set best tokens (output of current step) to input of next step
+        completed = completed | (best_ids == tgt_eos_idx)  # update `completed` when best_ids[i] == EOS
+        if all(completed):
+            break
+
+        # Strip [EOS] token for all tgt_ids
+    predict_sentences = []
+    strip_tgt_ids = []
+    for tgt_sentence in tgt_ids:
+        # Strip all token after EOS
+        strip_ids = tgt_sentence
+        if tgt_eos_idx in tgt_sentence:
+            eos_idx = tgt_sentence.tolist().index(tgt_eos_idx)
+            strip_ids = tgt_sentence[:eos_idx + 1]  # Include <EOS>
+        strip_tgt_ids.append(strip_ids.tolist())
+        predict_sentences.append(litmodel.tgt_tokenizer.decode(strip_ids))
+    return strip_tgt_ids, predict_sentences, attentions
 
 if __name__ == "__main__":
-    predict()
+    sentence = input("Enter sentence:")
+    translate(sentence, NMTLitModel)
+
