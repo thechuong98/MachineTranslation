@@ -16,10 +16,8 @@ class NMTLitModel(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.tokenizer_dir = os.path.join(self.hparams['work_dir'], 'script', 'tokenizer')
-        self.src_tokenizer = ByteLevelBPETokenizer(os.path.join(self.tokenizer_dir, 'en', 'vocab.json'),
-                                                   os.path.join(self.tokenizer_dir, 'en', 'merges.txt'))
-        self.tgt_tokenizer = ByteLevelBPETokenizer(os.path.join(self.tokenizer_dir, 'vi', 'vocab.json'),
-                                                   os.path.join(self.tokenizer_dir, 'vi', 'merges.txt'))
+        self.src_tokenizer = Tokenizer.from_file(os.path.join(self.tokenizer_dir, 'en.json'))
+        self.tgt_tokenizer = Tokenizer.from_file(os.path.join(self.tokenizer_dir, 'vi.json'))
         # self.src_pad_id = self.src_tokenizer.get_vocab()['[PAD]']
         # self.tgt_pad_id = self.tgt_tokenizer.get_vocab()['[PAD]']
         self.model = Transfomer(hparams=self.hparams)

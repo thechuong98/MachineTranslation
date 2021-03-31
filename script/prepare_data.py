@@ -69,7 +69,7 @@ def training_tokenizers(raw_datasets: dict, hparams):
     en_tokenizer.enable_padding(
         direction='right', length=hparams.seq_len, pad_id=en_tokenizer.get_vocab()["[PAD]"]
     )
-    en_tokenizer.save_model("tokenizer/en")
+    en_tokenizer.save("tokenizer/en.json", pretty=True)
 
     vi_tokenizer = ByteLevelBPETokenizer()
     vi_tokenizer.train_from_iterator(
@@ -89,7 +89,7 @@ def training_tokenizers(raw_datasets: dict, hparams):
     vi_tokenizer.enable_padding(
         direction='right', length=hparams.seq_len+1, pad_id=vi_tokenizer.get_vocab()["[PAD]"]
     )
-    vi_tokenizer.save_model("tokenizer/vi")
+    vi_tokenizer.save("tokenizer/vi.json", pretty=True)
 
     return en_tokenizer, vi_tokenizer
 
