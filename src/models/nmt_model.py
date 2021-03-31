@@ -5,6 +5,7 @@ import torch
 import hydra
 from src.architectures.transformer import Transfomer
 import os
+from tokenizers import Tokenizer
 from tokenizers.implementations import ByteLevelBPETokenizer
 from pytorch_lightning.metrics.classification import Accuracy, F1
 
@@ -15,8 +16,8 @@ class NMTLitModel(pl.LightningModule):
         super().__init__()
         self.save_hyperparameters()
         self.tokenizer_dir = os.path.join(self.hparams['work_dir'], 'script', 'tokenizer')
-        self.src_tokenizer = ByteLevelBPETokenizer(os.path.join(self.tokenizer_dir, 'en'))
-        self.tgt_tokenizer = ByteLevelBPETokenizer(os.path.join(self.tokenizer_dir, 'vi'))
+        self.src_tokenizer = Tokenizer.from_file(os.path.join(self.tokenizer_dir, 'en'))
+        self.tgt_tokenizer = Tokenizer.from_file(os.path.join(self.tokenizer_dir, 'vi'))
 
         # self.src_pad_id = self.src_tokenizer.get_vocab()['[PAD]']
         # self.tgt_pad_id = self.tgt_tokenizer.get_vocab()['[PAD]']
