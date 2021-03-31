@@ -31,24 +31,24 @@ def extras(config: DictConfig) -> None:
 
     # [OPTIONAL] Disable python warnings if <config.disable_warnings=True>
     if config.get("disable_warnings"):
-        log.info(f"Disabling python warnings! <{config.disable_warnings=}>")
+        log.info(f"Disabling python warnings! <{config.disable_warnings}>")
         warnings.filterwarnings("ignore")
 
     # [OPTIONAL] Disable Lightning logs if <config.disable_lightning_logs=True>
     if config.get("disable_lightning_logs"):
-        log.info(f"Disabling lightning logs! {config.disable_lightning_logs=}>")
+        log.info(f"Disabling lightning logs! {config.disable_lightning_logs}>")
         logging.getLogger("lightning").setLevel(logging.ERROR)
 
     # [OPTIONAL] Set <config.trainer.fast_dev_run=True> if  <config.debug=True>
     if config.get("debug"):
-        log.info(f"Running in debug mode! <{config.debug=}>")
+        log.info(f"Running in debug mode! <{config.debug}>")
         config.trainer.fast_dev_run = True
 
     # [OPTIONAL] Force debugger friendly configuration if <config.trainer.fast_dev_run=True>
     if config.trainer.get("fast_dev_run"):
         log.info(
             f"Forcing debugger friendly configuration! "
-            f"<{config.trainer.fast_dev_run=}>"
+            f"<{config.trainer.fast_dev_run}>"
         )
         # Debuggers don't like GPUs or multiprocessing
         if config.trainer.get("gpus"):

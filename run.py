@@ -25,7 +25,7 @@ def main(config: DictConfig):
 
     # Pretty print config using Rich library
     if config.get("print_config"):
-        log.info(f"Pretty printing config with Rich! <{config.print_config=}>")
+        log.info(f"Pretty printing config with Rich! <{config.print_config}>")
         template_utils.print_config(config, resolve=True)
 
     # Train model

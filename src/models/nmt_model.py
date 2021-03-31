@@ -23,29 +23,40 @@ class NMTLitModel(pl.LightningModule):
         self.model = Transfomer(hparams=self.hparams)
         self.criterion = torch.nn.CrossEntropyLoss()
         self.metric = load_metric('sacrebleu')
+        self.accuracy = Accuracy()
+        self.metric_hist = {
+            "train/acc": [],
+            "val/acc": [],
+            "train/loss": [],
+            "val/loss": [],
+        }
 
 
     def forward(self, src_ids, tgt_ids):
         tgt_inp_ids = tgt_ids[:, :-1]
         tgt_out_ids = tgt_ids[:, 1:]
         logits, encoder_attentions = self.model(src_ids, tgt_inp_ids)
-        return logits
+        return logits, tgt_out_ids, tgt_inp_ids
 
     def step(self, batch):
         src_ids, tgt_ids = batch
-        logits = self.forward(src_ids, tgt_ids)
+        logits, tgt_out_ids, tgt_inp_ids = self.forward(src_ids, tgt_ids)
         loss = self.criterion(logits.view(self.hparams['batch_size'], self.hparams['tgt_vocab_size'], -1), tgt_ids[:, 1:])
-        return loss
+        return loss, tgt_out_ids, tgt_inp_ids
 
 
     def training_step(self, batch, batch_idx):
-        loss = self.step(batch)
-        self.log('train_loss', loss.detach().cpu().item())
+        loss, tgt_out_ids, tgt_inp_ids = self.step(batch)
+        acc = self.accuracy(tgt_out_ids, tgt_inp_ids)
+        self.log("train/acc", acc, on_step=False, on_epoch=True, prog_bar=False)
+        self.log('train/loss', loss, on_step=False, on_epoch=True, prog_bar=False)
         return loss
 
     def validation_step(self, batch, batch_idx):
-        loss = self.step(batch)
-        self.log('val_loss', loss.detach().cpu().item())
+        loss, tgt_out_ids, tgt_inp_ids = self.step(batch)
+        acc = self.accuracy(tgt_out_ids, tgt_inp_ids)
+        self.log("val/acc", acc, on_step=False, on_epoch=True, prog_bar=False)
+        self.log('val/loss', loss, on_step=False, on_epoch=True, prog_bar=False)
         return loss
 
 
