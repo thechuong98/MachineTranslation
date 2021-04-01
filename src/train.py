@@ -74,6 +74,8 @@ def train(config: DictConfig) -> Optional[float]:
         logger=logger,
     )
 
+
+
     # Train the model
     log.info("Starting training!")
     trainer.fit(model=model, datamodule=datamodule)
@@ -98,3 +100,4 @@ def train(config: DictConfig) -> Optional[float]:
     optimized_metric = config.get("optimized_metric")
     if optimized_metric:
         return trainer.callback_metrics[optimized_metric]
+

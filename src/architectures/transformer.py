@@ -12,7 +12,7 @@ def multihead_attention_(Q, K, V, mask):
     """
     B, N, n_head, d_k = Q.shape
     scale = d_k**0.5
-    similar_score = torch.einsum('bnhd,bmhd->hbnm', Q, K)*scale
+    similar_score = torch.einsum('bnhd,bmhd->hbnm', Q, K)/scale
     similar_score = similar_score.masked_fill(mask, value=float('-inf'))
     attention_w = F.softmax(similar_score, dim=-1)
     attention = torch.einsum('hbnm,bmhd->bnhd', attention_w, V)
@@ -184,9 +184,9 @@ class AttentionAddNorm(nn.Module):
     def forward(self, query, key, value, mask):
         B, seq_len, d_model = query.shape
         init_query = query
-        query = self.Q_proj(query).reshape(B, seq_len, self.hparams['d_k'], self.hparams['n_head'])
-        key = self.K_proj(key).reshape(B, seq_len, self.hparams['d_k'], self.hparams['n_head'])
-        value = self.V_proj(value).reshape(B, seq_len, self.hparams['d_v'], self.hparams['n_head'])
+        query = self.Q_proj(query).reshape(B, seq_len, self.hparams['n_head'], self.hparams['d_k'])
+        key = self.K_proj(key).reshape(B, seq_len, self.hparams['n_head'], self.hparams['d_k'])
+        value = self.V_proj(value).reshape(B, seq_len, self.hparams['n_head'], self.hparams['d_v'])
         multihead_attention, similar_score = multihead_attention_(query, key, value, mask)
         multihead_attention_dropout = self.dropout(multihead_attention)
         multihead_attention_dropout = multihead_attention_dropout.reshape(B, seq_len, -1)

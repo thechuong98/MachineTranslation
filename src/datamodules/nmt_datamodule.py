@@ -55,3 +55,4 @@ class NMTDataModule(LightningDataModule):
                           num_workers=self.num_worker,
                           pin_memory=self.pin_memory,
                           shuffle=True)
+

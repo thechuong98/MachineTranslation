@@ -6,6 +6,7 @@ from src.transforms import mnist_transforms
 import torch
 import pdb
 import numpy as np
+from tokenizers import Tokenizer
 
 def predict():
     """Example of inference with trained model.
@@ -41,7 +42,7 @@ def predict():
     print(output)
 
 
-CKPT_PATH = "../../logs/runs/2021-04-01/12-12-03/checkpoints/last.ckpt"
+CKPT_PATH = "../../logs/content/MachineTranslation/logs/runs/2021-04-01/06-15-57/checkpoints/last.ckpt"
 litmodel = NMTLitModel.load_from_checkpoint(checkpoint_path=CKPT_PATH)
 
 
@@ -88,7 +89,7 @@ def translate(sentences, lightning_module):
 
 if __name__ == "__main__":
     src_sentence = [
-        "I'm a little busy right now.",
+        "Hi my name is",
     ]
 
     tgt_ids, predict_sentences, attentions = translate(src_sentence, litmodel)
