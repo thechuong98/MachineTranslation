@@ -1,7 +1,7 @@
 _target_: src.models.nmt_model.NMTLitModel
 
 work_dir: ${work_dir}
-batch_size: 32
+batch_size: 8
 vocab_size: 10000
 src_pad_id: 1
 tgt_pad_id: 1
