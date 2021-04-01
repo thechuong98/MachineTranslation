@@ -2,22 +2,29 @@ from torch import nn
 import torch
 import torch.nn.functional as F
 import math
+from einops import rearrange
 
-def multihead_attention_(Q, K, V, mask):
-    """
-    Q: (B, N, n_head, d_k)
-    K: (B, N, n_head, d_k)
-    V: (B, M, n_head, d_v)
-    mask (B, N, M)
+
+
+def multi_head_attention(Q, K, V, mask):
+    """Multi-head attention on a batch of Q, K, V
+    Arguments:
+        Q: torch.Tensor shape (B, N, n_head, d_k)
+        K: torch.Tensor shape (B, M, n_head, d_k)
+        V: torch.Tensor shape (B, M, n_head, d_v)
+        mask: torch.BoolTensor shape (B, N, M)
+        where mask[i] is `mask` for attention of record i: (Q[i], K[i], V[i])
+
+    Return:
+        scaled-dot attention: torch.Tensor shape (B, N, n_head d_v)
+        similar_score: torch.FloatTensor shape (B, n_head, N, M)
     """
     B, N, n_head, d_k = Q.shape
-    scale = d_k**0.5
-    similar_score = torch.einsum('bnhd,bmhd->hbnm', Q, K)/scale
-    similar_score = similar_score.masked_fill(mask, value=float('-inf'))
-    attention_w = F.softmax(similar_score, dim=-1)
-    attention = torch.einsum('hbnm,bmhd->bnhd', attention_w, V)
-
-    return attention, similar_score
+    similar_score = torch.einsum('bnhd,bmhd->bhnm', Q, K) / (d_k ** 0.5)
+    similar_score = similar_score.masked_fill(mask.unsqueeze(1), value=float("-inf"))
+    attention_weight = F.softmax(similar_score, dim=-1)
+    attentions = torch.einsum('bhnm,bmhd->bnhd', attention_weight, V)
+    return attentions, similar_score
 
 
 class Transfomer(nn.Module):
@@ -149,9 +156,8 @@ class Decoder(nn.Module):
         return logits, encoder_attentions
 
 class FeedForwardAddNorm(nn.Module):
-
-    def __init__(self, hparams: dict):
-        super(FeedForwardAddNorm, self).__init__()
+    def __init__(self, hparams):
+        super().__init__()
         self.linear1 = nn.Linear(hparams['d_model'], hparams['d_ff'])
         self.activation = nn.ReLU()
         self.linear2 = nn.Linear(hparams['d_ff'], hparams['d_model'])
@@ -159,41 +165,36 @@ class FeedForwardAddNorm(nn.Module):
         self.layer_norm = nn.LayerNorm(hparams['d_model'])
 
     def forward(self, input):
-        x_init = input
-        x = self.linear1(x_init)
+        x = self.linear1(input)
         x = self.activation(x)
         x = self.linear2(x)
-        x = self.dropout(x)
-        x = x + x_init
-
-        return self.layer_norm(x)
+        x = input + self.dropout(x)
+        x = self.layer_norm(x)
+        return x
 
 
 
 
 class AttentionAddNorm(nn.Module):
-    def __init__(self, hparams: dict):
-        self.hparams = hparams
-        super(AttentionAddNorm, self).__init__()
-        self.Q_proj = nn.Linear(hparams['d_model'], hparams['d_model'])
-        self.K_proj = nn.Linear(hparams['d_model'], hparams['d_model'])
-        self.V_proj = nn.Linear(hparams['d_model'], hparams['d_model'])
-        self.dropout = nn.Dropout(hparams['attn_dropout'])
-        self.layer_norm = nn.LayerNorm(hparams['d_model'])
+    def __init__(self, hparams):
+        super().__init__()
+        self.hparams=hparams
+        self.Q_proj = nn.Linear(self.hparams['d_model'], self.hparams['d_model'])
+        self.K_proj = nn.Linear(self.hparams['d_model'], self.hparams['d_model'])
+        self.V_proj = nn.Linear(self.hparams['d_model'], self.hparams['d_model'])
+        self.dropout = nn.Dropout(self.hparams['attn_dropout'])
+        self.layer_norm = nn.LayerNorm(self.hparams['d_model'])
 
     def forward(self, query, key, value, mask):
-        B, seq_len, d_model = query.shape
-        init_query = query
-        query = self.Q_proj(query).reshape(B, seq_len, self.hparams['n_head'], self.hparams['d_k'])
-        key = self.K_proj(key).reshape(B, seq_len, self.hparams['n_head'], self.hparams['d_k'])
-        value = self.V_proj(value).reshape(B, seq_len, self.hparams['n_head'], self.hparams['d_v'])
-        multihead_attention, similar_score = multihead_attention_(query, key, value, mask)
-        multihead_attention_dropout = self.dropout(multihead_attention)
-        multihead_attention_dropout = multihead_attention_dropout.reshape(B, seq_len, -1)
-        add_layer = multihead_attention_dropout + init_query
-        norm = self.layer_norm(add_layer)
+        Q, K, V = self.Q_proj(query), self.K_proj(key), self.V_proj(value)
+        Q = rearrange(Q, "B seq_len (n_head d_k) -> B seq_len n_head d_k", n_head=self.hparams['n_head'])
+        K = rearrange(K, "B seq_len (n_head d_k) -> B seq_len n_head d_k", n_head=self.hparams['n_head'])
+        V = rearrange(V, "B seq_len (n_head d_v) -> B seq_len n_head d_v", n_head=self.hparams['n_head'])
+        attention, similar_score = multi_head_attention(Q, K, V, mask)
+        attention = self.dropout(attention)
+        attention = rearrange(attention, "B seq_len n_head d_v -> B seq_len (n_head d_v)")
+        return self.layer_norm(query + attention), similar_score
 
-        return norm, similar_score
 
 
 

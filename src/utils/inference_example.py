@@ -42,7 +42,7 @@ def predict():
     print(output)
 
 
-CKPT_PATH = "../../logs/content/MachineTranslation/logs/runs/2021-04-01/06-15-57/checkpoints/last.ckpt"
+CKPT_PATH = "../../logs/runs/2021-04-01/17-37-02/checkpoints/last.ckpt"
 litmodel = NMTLitModel.load_from_checkpoint(checkpoint_path=CKPT_PATH)
 
 
@@ -89,7 +89,7 @@ def translate(sentences, lightning_module):
 
 if __name__ == "__main__":
     src_sentence = [
-        "Hi my name is",
+        "Hi",
     ]
 
     tgt_ids, predict_sentences, attentions = translate(src_sentence, litmodel)

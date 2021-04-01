@@ -27,7 +27,7 @@ class NMTDataModule(LightningDataModule):
 
     def setup(self, stage=None):
         self.data_train = NMTDataset(self.data_dir, 'train')
-        # self.train_indices = torch.randperm(len(self.data_train))[:100]
+        self.train_indices = torch.randperm(len(self.data_train))[:100]
         self.data_val = NMTDataset(self.data_dir, 'val')
         self.data_test = NMTDataset(self.data_dir, 'test')
 
@@ -38,8 +38,8 @@ class NMTDataModule(LightningDataModule):
                           num_workers=self.num_worker,
                           pin_memory=self.pin_memory,
                           drop_last=True,
-                          # sampler=SubsetRandomSampler(self.train_indices))
-                          shuffle=True)
+                          sampler=SubsetRandomSampler(self.train_indices))
+                          # shuffle=True)
 
     def val_dataloader(self):
         return DataLoader(dataset=self.data_val,

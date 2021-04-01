@@ -26,3 +26,5 @@ dvc
 scikit-learn
 tokenizers
 datasets
+einops
+sacrebleu
