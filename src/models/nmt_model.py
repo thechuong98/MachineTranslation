@@ -8,6 +8,7 @@ import os
 from tokenizers import Tokenizer
 from tokenizers.implementations import ByteLevelBPETokenizer
 from pytorch_lightning.metrics.classification import Accuracy, F1
+from einops import rearrange
 
 
 class NMTLitModel(pl.LightningModule):
@@ -46,7 +47,7 @@ class NMTLitModel(pl.LightningModule):
         tgt_inp_ids = tgt_ids[:, :-1]
         tgt_out_tokens = tgt_ids[:, 1:]
         logits, encoder_attentions = self.model(src_ids, tgt_inp_ids)
-        loss = F.cross_entropy(logits.view(self.hparams['batch_size'], self.hparams['tgt_vocab_size'], -1), tgt_out_tokens)
+        loss = F.cross_entropy(rearrange(logits, "B seq_len vocab_size -> B vocab_size seq_len"), tgt_out_tokens)
         ############################################
         return loss
 
