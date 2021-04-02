@@ -17,4 +17,4 @@ num_encoder_layers: 4       # Number of TransformerEncoderBlock layer in Encoder
 num_decoder_layers: 4       # Number of TransformerDecoderBlock layer in Decoder
 attn_dropout: 0.1           # Dropout for residual add after multi-head attention
 ff_dropout: 0.1             # Dropout for feed-forward residual add
-embed_dropout: 0.2          # Dropout for embedding after augmented wih positional encoding
+embed_dropout: 0.1          # Dropout for embedding after augmented wih positional encoding
